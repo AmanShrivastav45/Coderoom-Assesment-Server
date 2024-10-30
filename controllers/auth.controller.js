@@ -185,10 +185,12 @@ export const resetPassword = async (request, response) => {
   }
 };
 
-export const checkAuth = async (request, response, role) => {
+export const checkAuth = async (request, response) => {
+  const { accessToken } = request.cookies; 
+  if (!accessToken) return response.sendStatus(401); 
   try {
-    let UserModel = role === "user" ? User : Mentor;
-    const user = await UserModel.findById(request.userId).select("-password");
+    const { userId } = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+    const user = await User.findById(userId).select("-password");
     if (!user)
       return response
         .status(400)
