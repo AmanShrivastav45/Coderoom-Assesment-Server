@@ -1,21 +1,15 @@
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
 
-dotenv.config();
-
-export const verifyToken = (request, response, next) => {
-  const token = request.cookies.token; // Assuming token is stored in cookies
-  if (!token) {
-    return response.status(401).json({ success: false, message: "Unauthorized - no token provided" });
-  }
-
-  try {
-    // Verify and decode the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    request.user = { userId: decoded.userId }; // Attach userId to request object
-    next();
-  } catch (error) {
-    console.log("Error in verifyToken: ", error);
-    return response.status(500).json({ success: false, message: "Server error" });
-  }
+export const verifyToken = (req, res, next) => {
+	const token = req.cookies.token;
+	if (!token) return res.status(401).json({ success: false, message: "Unauthorized - no token provided" });
+	try {
+		const decoded = jwt.verify(token, process.env.JWT_SECRET);
+		if (!decoded) return res.status(401).json({ success: false, message: "Unauthorized - invalid token" });
+		req.userId = decoded.userId;
+		next();
+	} catch (error) {
+		console.log("Error in verifyToken ", error);
+		return res.status(500).json({ success: false, message: "Server error" });
+	}
 };

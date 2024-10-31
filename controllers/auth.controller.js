@@ -7,10 +7,6 @@ import { generateJWTandSetCookie } from "../utils/generateJWTandSetCookie.js";
 
 export const signup = async (request, response) => {
   const { userName, email, password } = request.body;
-  console.table({
-    UserName: userName,
-    Email: email,
-  });
   try {
     if (!userName || !email || !password) {
       throw new Error("All fields are required");
@@ -37,7 +33,7 @@ export const signup = async (request, response) => {
 
     await newUser.save();
     generateJWTandSetCookie(response, newUser._id);
-    sendOTPverificationEmail(userName, email, OTP);
+    await sendOTPverificationEmail(userName, email, OTP);
     response.status(201).json({
       success: true,
       message: "User created successfully",
@@ -185,19 +181,15 @@ export const resetPassword = async (request, response) => {
   }
 };
 
-export const checkAuth = async (request, response) => {
-  const { accessToken } = request.cookies; 
-  if (!accessToken) return response.sendStatus(401); 
-  try {
-    const { userId } = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-    const user = await User.findById(userId).select("-password");
-    if (!user)
-      return response
-        .status(400)
-        .json({ success: false, message: "User not found" });
-    response.status(200).json({ success: true, user });
-  } catch (error) {
-    console.log("Error in checkAuth ", error);
-    response.status(400).json({ success: false, message: error.message });
-  }
+export const checkAuth = async (req, res) => {
+	try {
+		const user = await User.findById(req.userId).select("-password");
+		if (!user) {
+			return res.status(400).json({ success: false, message: "User not found" });
+		}
+		res.status(200).json({ success: true, user });
+	} catch (error) {
+		console.log("Error in checkAuth ", error);
+		res.status(400).json({ success: false, message: error.message });
+	}
 };
